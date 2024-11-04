@@ -17,7 +17,7 @@ Command = Literal[
     'str_replace',
     'insert',
     'undo_edit',
-    # 'jump_to_definition', TODO:
+    'jump_to_definition',
     # 'find_references' TODO:
 ]
 
@@ -49,6 +49,7 @@ class OHEditor:
         old_str: str | None = None,
         new_str: str | None = None,
         insert_line: int | None = None,
+        symbol_name: str | None = None,
         **kwargs,
     ) -> ToolResult | CLIResult:
         _path = Path(path)
@@ -73,6 +74,10 @@ class OHEditor:
             return self.insert(_path, insert_line, new_str)
         elif command == 'undo_edit':
             return self.undo_edit(_path)
+        elif command == 'jump_to_definition':
+            if not symbol_name:
+                raise EditorToolParameterMissingError(command, 'symbol_name')
+            return self.jump_to_definition(_path, symbol_name)
 
         raise ToolError(
             f'Unrecognized command {command}. The allowed commands for the {self.TOOL_NAME} tool are: {", ".join(get_args(Command))}'
@@ -191,15 +196,6 @@ class OHEditor:
             file_content = '\n'.join(file_content_lines[start_line - 1 : end_line])
         return CLIResult(output=self._make_output(file_content, str(path), start_line))
 
-    def write_file(self, path: Path, file_text: str) -> None:
-        """
-        Write the content of a file to a given path; raise a ToolError if an error occurs.
-        """
-        try:
-            path.write_text(file_text)
-        except Exception as e:
-            raise ToolError(f'Ran into {e} while trying to write to {path}') from None
-
     def insert(self, path: Path, insert_line: int, new_str: str) -> CLIResult:
         """
         Implement the insert command, which inserts new_str at the specified line in the file content.
@@ -252,6 +248,24 @@ class OHEditor:
         success_message += 'Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary.'
         return CLIResult(output=success_message)
 
+    def undo_edit(self, path: Path) -> CLIResult:
+        """
+        Implement the undo_edit command.
+        """
+        if not self._file_history[path] or len(self._file_history[path]) <= 1:
+            raise ToolError(f'No edit history found for {path}.')
+
+        self._file_history[path].pop()
+        old_text = self._file_history[path][-1]
+        self.write_file(path, old_text)
+
+        return CLIResult(
+            output=f'Last edit to {path} undone successfully. {self._make_output(old_text, str(path))}'
+        )
+
+    def jump_to_definition(self, path: Path, symbol_name: str) -> ToolResult:
+        raise NotImplementedError
+
     def validate_path(self, command: Command, path: Path) -> None:
         """
         Check that the path/command combination is valid.
@@ -284,6 +298,24 @@ class OHEditor:
                 f'The path {path} is a directory and only the `view` command can be used on directories.',
             )
 
+    def read_file(self, path: Path) -> str:
+        """
+        Read the content of a file from a given path; raise a ToolError if an error occurs.
+        """
+        try:
+            return path.read_text()
+        except Exception as e:
+            raise ToolError(f'Ran into {e} while trying to read {path}') from None
+
+    def write_file(self, path: Path, file_text: str) -> None:
+        """
+        Write the content of a file to a given path; raise a ToolError if an error occurs.
+        """
+        try:
+            path.write_text(file_text)
+        except Exception as e:
+            raise ToolError(f'Ran into {e} while trying to write to {path}') from None
+
     def _populate_file_history_if_having_content_before_edit(self, path: Path) -> None:
         """
         Populate the file history with the current file content.
@@ -293,30 +325,6 @@ class OHEditor:
             return
 
         self._file_history[path].append(self.read_file(path))
-
-    def undo_edit(self, path: Path) -> CLIResult:
-        """
-        Implement the undo_edit command.
-        """
-        if not self._file_history[path] or len(self._file_history[path]) <= 1:
-            raise ToolError(f'No edit history found for {path}.')
-
-        self._file_history[path].pop()
-        old_text = self._file_history[path][-1]
-        self.write_file(path, old_text)
-
-        return CLIResult(
-            output=f'Last edit to {path} undone successfully. {self._make_output(old_text, str(path))}'
-        )
-
-    def read_file(self, path: Path) -> str:
-        """
-        Read the content of a file from a given path; raise a ToolError if an error occurs.
-        """
-        try:
-            return path.read_text()
-        except Exception as e:
-            raise ToolError(f'Ran into {e} while trying to read {path}') from None
 
     def _make_output(
         self,
