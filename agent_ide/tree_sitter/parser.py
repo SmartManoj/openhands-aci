@@ -12,13 +12,15 @@ from agent_ide.utils.file import get_modified_time, read_text
 warnings.filterwarnings('ignore', category=FutureWarning, module='tree_sitter')
 
 ParsedTag = namedtuple(
-    'ParsedTag', ('rel_path', 'abs_path', 'start_line', 'node_name', 'tag_kind')
+    'ParsedTag',
+    ('rel_path', 'abs_path', 'start_line', 'end_line', 'node_content', 'tag_kind'),
 )
 
 
 class TagKind(Enum):
     DEF = 'def'
     REF = 'ref'
+    DEF_WITH_BODY = 'def_with_body'
 
 
 class TreeSitterParser:
@@ -83,6 +85,8 @@ class TreeSitterParser:
                 tag_kind = TagKind.DEF
             elif tag_str.startswith('name.reference.'):
                 tag_kind = TagKind.REF
+            elif tag_str.startswith('definition.'):
+                tag_kind = TagKind.DEF_WITH_BODY
             else:
                 # Skip other tags
                 continue
@@ -91,11 +95,42 @@ class TreeSitterParser:
                 rel_path=rel_path,
                 abs_path=abs_path,
                 start_line=node.start_point[0],
-                node_name=node.text.decode(
-                    'utf-8'
-                ),  # node_name is defined in the query file
+                end_line=node.end_point[0],
+                node_content=node.text.decode('utf-8'),
                 tag_kind=tag_kind,
             )
             parsed_tags.append(result_tag)
 
+        parsed_tags = self._update_end_lines_for_def_using_def_with_body(parsed_tags)
         return parsed_tags
+
+    def _update_end_lines_for_def_using_def_with_body(
+        self, parsed_tags: list[ParsedTag]
+    ) -> list[ParsedTag]:
+        # Create a dictionary to quickly look up end_line for DEF_WITH_BODY tags
+        def_with_body_lookup = {
+            (tag.abs_path, tag.start_line): tag.end_line
+            for tag in parsed_tags
+            if tag.tag_kind == TagKind.DEF_WITH_BODY
+        }
+
+        # Iterate over tags and update end_line if a matching DEF_WITH_BODY exists
+        result_tags = []
+        for tag in parsed_tags:
+            if (
+                tag.tag_kind == TagKind.DEF
+                and (tag.abs_path, tag.start_line) in def_with_body_lookup
+            ):
+                updated_tag = ParsedTag(
+                    rel_path=tag.rel_path,
+                    abs_path=tag.abs_path,
+                    start_line=tag.start_line,
+                    end_line=def_with_body_lookup[(tag.abs_path, tag.start_line)],
+                    node_content=tag.node_content,
+                    tag_kind=tag.tag_kind,
+                )
+                result_tags.append(updated_tag)
+            else:
+                result_tags.append(tag)
+
+        return result_tags
