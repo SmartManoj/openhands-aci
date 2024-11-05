@@ -3,10 +3,11 @@ from collections import namedtuple
 from enum import Enum
 from pathlib import Path
 
-from agent_ide.utils.file import get_modified_time, read_text
 from diskcache import Cache
 from grep_ast import filename_to_lang
 from tree_sitter_languages import get_language, get_parser
+
+from openhands_aci.utils.file import get_modified_time, read_text
 
 warnings.filterwarnings('ignore', category=FutureWarning, module='tree_sitter')
 

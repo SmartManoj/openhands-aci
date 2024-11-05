@@ -1,11 +1,12 @@
 from collections import defaultdict
 from pathlib import Path
 
-from agent_ide.tree_sitter.parser import ParsedTag, TagKind, TreeSitterParser
-from agent_ide.utils.file import GitRepoUtils, get_modified_time, read_text
-from agent_ide.utils.path import PathUtils
 from grep_ast import TreeContext
 from tqdm import tqdm
+
+from openhands_aci.tree_sitter.parser import ParsedTag, TagKind, TreeSitterParser
+from openhands_aci.utils.file import GitRepoUtils, get_modified_time, read_text
+from openhands_aci.utils.path import PathUtils
 
 
 class SymbolNavigator:
