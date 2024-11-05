@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from git import Repo
 
-from agent_ide.utils.file import GitRepoUtils, read_text
+from openhands_aci.utils.file import GitRepoUtils, read_text
 
 
 @pytest.fixture

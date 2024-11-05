@@ -2,7 +2,11 @@ from pathlib import Path
 
 import pytest
 
-from agent_ide.utils.path import PathUtils, get_depth_of_rel_path, has_image_extension
+from openhands_aci.utils.path import (
+    PathUtils,
+    get_depth_of_rel_path,
+    has_image_extension,
+)
 
 
 @pytest.fixture
