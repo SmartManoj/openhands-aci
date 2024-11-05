@@ -88,7 +88,6 @@ class SymbolNavigator:
                     continue
                 def_tags.update(identwrel2deftags.get((def_rel, symbol), set()))
 
-        print(f'All definitions of {symbol}: {def_tags}')
         # Concatenate the definitions to another tree representation
         defs_repr = ''
         defs_repr += f'\nDefinition(s) of `{symbol}`:\n'
@@ -100,49 +99,25 @@ class SymbolNavigator:
 
         return defs_repr
 
-    # def get_references_tree(
-    #     self, symbol: str
-    # ):
-    #     refs_set = set()
-    #     for ident_tup in llm_extracted_idents:
-    #         mentioned_cls, mentioned_fn = (
-    #             ident_tup.class_name,
-    #             ident_tup.function_name,
-    #         )
-    #         if mentioned_fn:
-    #             ref_rels = ident2refrels.get(mentioned_fn, set())
-    #             ref_tags = set()
-    #             for ref_rel in ref_rels:
-    #                 ref_tags.update(
-    #                     identwrel2reftags.get((ref_rel, mentioned_fn), set())
-    #                 )
-    #             static_direct_refs[ident_tup] = ref_tags
-    #         elif mentioned_cls:
-    #             ref_rels = ident2refrels.get(mentioned_cls, set())
-    #             ref_tags = set()
-    #             for ref_rel in ref_rels:
-    #                 ref_tags.update(
-    #                     identwrel2reftags.get((ref_rel, mentioned_cls), set())
-    #                 )
-    #             static_direct_refs[ident_tup] = ref_tags
+    def get_references_tree(self, symbol: str):
+        _, ident2refrels, _, identwrel2reftags = self.get_parsed_tags()
 
-    #     # Concatenate the direct references to another tree representation
-    #     direct_refs_repr = ''
-    #     for idx, (ident_tup, ref_tags) in enumerate(static_direct_refs.items()):
-    #         mentioned_cls, mentioned_fn = (
-    #             ident_tup.class_name,
-    #             ident_tup.function_name,
-    #         )
-    #         direct_refs_repr += (
-    #             f"\n{idx + 1}. References to '{mentioned_fn or mentioned_cls}':\n"
-    #         )
-    #         # Sort the tags by file path and line number
-    #         ref_tags_list = list(ref_tags)
-    #         ref_tags_list.sort(key=lambda tag: (tag.rel_path, tag.start_line))
-    #         direct_refs_repr += self.tag_list_to_tree(ref_tags_list)
-    #         direct_refs_repr += '\n'
+        # Extract references for the symbol
+        ref_tags = set()
+        ref_rels = ident2refrels.get(symbol, set())
+        for ref_rel in ref_rels:
+            ref_tags.update(identwrel2reftags.get((ref_rel, symbol), set()))
 
-    #     return direct_refs_repr
+        # Concatenate the direct references to another tree representation
+        direct_refs_repr = ''
+        direct_refs_repr += f'\nReferences to `{symbol}`:\n'
+        # Sort the tags by file path and line number
+        ref_tags_list = list(ref_tags)
+        ref_tags_list.sort(key=lambda tag: (tag.rel_path, tag.start_line))
+        direct_refs_repr += self.tag_list_to_tree(ref_tags_list, use_end_line=False)
+        direct_refs_repr += '\n'
+
+        return direct_refs_repr
 
     def tag_list_to_tree(self, tags: list[ParsedTag], use_end_line=False) -> str:
         if not tags:
@@ -223,4 +198,5 @@ class SymbolNavigator:
 
 if __name__ == '__main__':
     navigator = SymbolNavigator()
-    print(navigator.get_definitions_tree('ToolError'))
+    # print(navigator.get_definitions_tree('ToolError'))
+    print(navigator.get_references_tree('ToolError'))
