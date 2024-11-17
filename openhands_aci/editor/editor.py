@@ -45,7 +45,7 @@ class OHEditor:
     def __init__(self, workspace='./'):
         self._file_history: dict[Path, list[str]] = defaultdict(list)
         self._linter = DefaultLinter()
-        self.symbol_navigator = SymbolNavigator(root=workspace)
+        self._symbol_navigator = SymbolNavigator(root=workspace)
 
     def __call__(
         self,
@@ -57,8 +57,8 @@ class OHEditor:
         old_str: str | None = None,
         new_str: str | None = None,
         insert_line: int | None = None,
-        enable_linting: bool = False,
         symbol_name: str | None = None,
+        enable_linting: bool = False,
         **kwargs,
     ) -> ToolResult | CLIResult:
         if path is not None:
@@ -296,12 +296,12 @@ class OHEditor:
         """
         if path is None:
             return CLIResult(
-                output=self.symbol_navigator.get_definitions_tree(symbol_name)
+                output=self._symbol_navigator.get_definitions_tree(symbol_name)
             )
         else:
-            rel_path_str = str(path.relative_to(self.symbol_navigator.root))
+            rel_path_str = str(path.relative_to(self._symbol_navigator.root))
             return CLIResult(
-                output=self.symbol_navigator.get_definitions_tree(
+                output=self._symbol_navigator.get_definitions_tree(
                     symbol_name, rel_path_str
                 )
             )
@@ -310,7 +310,7 @@ class OHEditor:
         """
         Implement the find_references command.
         """
-        return CLIResult(output=self.symbol_navigator.get_references_tree(symbol_name))
+        return CLIResult(output=self._symbol_navigator.get_references_tree(symbol_name))
 
     def validate_path(self, command: Command, path: Path) -> None:
         """

@@ -22,6 +22,7 @@ def file_editor(
     old_str: str | None = None,
     new_str: str | None = None,
     insert_line: int | None = None,
+    symbol_name: str | None = None,
     enable_linting: bool = False,
 ) -> str:
     try:
@@ -33,6 +34,7 @@ def file_editor(
             old_str=old_str,
             new_str=new_str,
             insert_line=insert_line,
+            symbol_name=symbol_name,
             enable_linting=enable_linting,
         )
     except ToolError as e:
