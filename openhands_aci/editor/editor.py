@@ -15,6 +15,7 @@ from .exceptions import (
     ToolError,
 )
 from .navigator import SymbolNavigator
+from .prompts import NAVIGATION_TIPS
 from .results import CLIResult, ToolResult, maybe_truncate
 
 Command = Literal[
@@ -158,6 +159,7 @@ class OHEditor:
             success_message += '\n' + lint_results + '\n'
 
         success_message += 'Review the changes and make sure they are as expected. Edit the file again if necessary.'
+        success_message += f'\n{NAVIGATION_TIPS}'
         return CLIResult(output=success_message)
 
     def view(self, path: Path, view_range: list[int] | None = None) -> CLIResult:
@@ -184,6 +186,7 @@ class OHEditor:
         if not view_range:
             return CLIResult(
                 output=self._make_output(file_content, str(path), start_line)
+                + NAVIGATION_TIPS
             )
 
         if len(view_range) != 2 or not all(isinstance(i, int) for i in view_range):
@@ -221,7 +224,10 @@ class OHEditor:
             file_content = '\n'.join(file_content_lines[start_line - 1 :])
         else:
             file_content = '\n'.join(file_content_lines[start_line - 1 : end_line])
-        return CLIResult(output=self._make_output(file_content, str(path), start_line))
+        return CLIResult(
+            output=self._make_output(file_content, str(path), start_line)
+            + NAVIGATION_TIPS
+        )
 
     def write_file(self, path: Path, file_text: str) -> None:
         """
@@ -288,6 +294,7 @@ class OHEditor:
             success_message += '\n' + lint_results + '\n'
 
         success_message += 'Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary.'
+        success_message += f'\n{NAVIGATION_TIPS}'
         return CLIResult(output=success_message)
 
     def jump_to_definition(self, path: Path | None, symbol_name: str) -> ToolResult:
