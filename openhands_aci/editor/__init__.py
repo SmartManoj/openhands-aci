@@ -16,7 +16,7 @@ def _make_api_tool_result(tool_result: ToolResult) -> str:
 
 def file_editor(
     command: Command,
-    path: str,
+    path: str | None = None,
     file_text: str | None = None,
     view_range: list[int] | None = None,
     old_str: str | None = None,
