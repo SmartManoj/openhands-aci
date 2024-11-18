@@ -17,13 +17,32 @@ class SymbolNavigator:
         self.root = root
         self.show_progress = show_progress
 
-        self.git_utils = GitRepoUtils(self.root)
-        self.path_utils = PathUtils(self.root)
-        self.ts_parser = TreeSitterParser(self.root)
+        # Lazy-initialized attributes
+        self._git_utils: GitRepoUtils | None = None
+        self._path_utils: PathUtils | None = None
+        self._ts_parser: TreeSitterParser | None = None
 
         # Caching
         self.file_context_cache: dict = {}  # (rel_file) -> {'context': TreeContext_obj, 'mtime': mtime})
         self.rendered_tree_cache: dict = {}  # (rel_file, lois, mtime) -> rendered_tree
+
+    @property
+    def git_utils(self):
+        if self._git_utils is None:
+            self._git_utils = GitRepoUtils(self.root)
+        return self._git_utils
+
+    @property
+    def path_utils(self):
+        if self._path_utils is None:
+            self._path_utils = PathUtils(self.root)
+        return self._path_utils
+
+    @property
+    def ts_parser(self):
+        if self._ts_parser is None:
+            self._ts_parser = TreeSitterParser(self.root)
+        return self._ts_parser
 
     def get_parsed_tags(
         self,
