@@ -2,9 +2,11 @@ from collections import defaultdict
 from pathlib import Path
 
 from grep_ast import TreeContext
+from rapidfuzz import process
 from tqdm import tqdm
 
-from openhands_aci.tree_sitter.parser import ParsedTag, TagKind, TreeSitterParser
+from openhands_aci.tree_sitter.parser import (ParsedTag, TagKind,
+                                              TreeSitterParser)
 from openhands_aci.utils.file import GitRepoUtils, get_modified_time, read_text
 from openhands_aci.utils.path import PathUtils
 
@@ -106,6 +108,12 @@ class SymbolNavigator:
                 if rel_file_path is not None and rel_file_path not in def_rel:
                     continue
                 def_tags.update(identwrel2deftags.get((def_rel, symbol), set()))
+        
+        if not def_tags:
+            # Perform a fuzzy search for the symbol
+            choices = list(ident2defrels.keys())
+            suggested_matches = process.extract(symbol, choices, limit=5)
+            return f"No definitions found for `{symbol}`. Maybe you meant one of these: {', '.join(match[0] for match in suggested_matches)}?"
 
         # Concatenate the definitions to another tree representation
         defs_repr = ''
@@ -127,6 +135,12 @@ class SymbolNavigator:
         for ref_rel in ref_rels:
             ref_tags.update(identwrel2reftags.get((ref_rel, symbol), set()))
 
+        if not ref_tags:
+            # Perform a fuzzy search for the symbol
+            choices = list(ident2refrels.keys())
+            suggested_matches = process.extract(symbol, choices, limit=5)
+            return f"No references found for `{symbol}`. Maybe you meant one of these: {', '.join(match[0] for match in suggested_matches)}?"
+        
         # Concatenate the direct references to another tree representation
         direct_refs_repr = ''
         direct_refs_repr += f'\nReferences to `{symbol}`:\n'
