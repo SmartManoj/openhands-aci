@@ -22,6 +22,9 @@ class SymbolNavigator:
         self._git_utils: GitRepoUtils | None = None
         self._path_utils: PathUtils | None = None
         self._ts_parser: TreeSitterParser | None = None
+        self._no_git_repo_found = (
+            False  # Used to disable the 2 navigation commands if no git repo is found
+        )
 
         # Caching
         self.file_context_cache: dict = {}  # (rel_file) -> {'context': TreeContext_obj, 'mtime': mtime})
@@ -29,9 +32,15 @@ class SymbolNavigator:
 
     @property
     def git_utils(self):
-        if self._git_utils is None:
-            self._git_utils = GitRepoUtils(self.root)
-        return self._git_utils
+        if not self._no_git_repo_found:
+            if self._git_utils is None:
+                try:
+                    self._git_utils = GitRepoUtils(self.root)
+                except Exception:
+                    self._no_git_repo_found = True
+                    return None
+            return self._git_utils
+        return None
 
     @property
     def path_utils(self):
@@ -97,6 +106,9 @@ class SymbolNavigator:
     def get_definitions_tree(
         self, symbol: str, rel_file_path: str | None = None, use_end_line=True
     ):
+        if not self.git_utils:
+            return 'No git repository found. Navigation commands are disabled. Please use bash commands instead.'
+
         ident2defrels, _, identwrel2deftags, _ = self.get_parsed_tags()
 
         # Extract definitions for the symbol
@@ -126,6 +138,9 @@ class SymbolNavigator:
         return defs_repr
 
     def get_references_tree(self, symbol: str):
+        if not self.git_utils:
+            return 'No git repository found. Navigation commands are disabled. Please use bash commands instead.'
+
         _, ident2refrels, _, identwrel2reftags = self.get_parsed_tags()
 
         # Extract references for the symbol
