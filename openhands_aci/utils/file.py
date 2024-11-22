@@ -1,12 +1,12 @@
 from pathlib import Path
 
-from git import Repo
-
 from .path import get_depth_of_rel_path, has_image_extension
 
 
 class GitRepoUtils:
     def __init__(self, abs_repo_path: str) -> None:
+        from git import Repo
+
         if not Path(abs_repo_path).is_absolute():
             raise ValueError('The path must be absolute')
 
