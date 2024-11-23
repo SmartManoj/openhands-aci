@@ -241,9 +241,3 @@ class SymbolNavigator:
         res = context.format()
         self.rendered_tree_cache[tree_cache_key] = res
         return res
-
-
-if __name__ == '__main__':
-    navigator = SymbolNavigator()
-    # print(navigator.get_definitions_tree('ToolError'))
-    print(navigator.get_references_tree('ToolError'))

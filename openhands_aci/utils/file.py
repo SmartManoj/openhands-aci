@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from .logger import oh_aci_logger as logger
 from .path import get_depth_of_rel_path, has_image_extension
 
 
@@ -14,7 +15,7 @@ class GitRepoUtils:
         try:
             self.repo = Repo(self.repo_path)
         except Exception:
-            print(
+            logger.warning(
                 f'Could not find git repository at {abs_repo_path}, trying to detect at child directories'
             )
             for child in self.repo_path.iterdir():
@@ -22,10 +23,12 @@ class GitRepoUtils:
                     try:
                         self.repo = Repo(child)
                         self.repo_path = child
-                        print(f'Found git repository at {child}')
+                        logger.info(f'Found git repository at {child}')
                         break
                     except Exception:
-                        print(f'Could not find git repository at child {child}')
+                        logger.warning(
+                            f'Could not find git repository at child {child}'
+                        )
             if not self.repo:
                 raise Exception(
                     'Could not find any git repository in the root directory or its children'

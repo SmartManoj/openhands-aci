@@ -8,6 +8,7 @@ from grep_ast import filename_to_lang
 from tree_sitter_languages import get_language, get_parser
 
 from openhands_aci.utils.file import get_modified_time, read_text
+from openhands_aci.utils.logger import oh_aci_logger as logger
 
 warnings.filterwarnings('ignore', category=FutureWarning, module='tree_sitter')
 
@@ -35,7 +36,7 @@ class TreeSitterParser:
         try:
             self.tags_cache = Cache(cache_path)
         except Exception:
-            print(
+            logger.warning(
                 f'Could not load tags cache from {cache_path}, try deleting cache directory.'
             )
             self.tags_cache = dict()
