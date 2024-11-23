@@ -22,8 +22,8 @@ class SymbolNavigator:
         self._git_utils: GitRepoUtils | None = None
         self._path_utils: PathUtils | None = None
         self._ts_parser: TreeSitterParser | None = None
-        self._no_git_repo_found = (
-            False  # Used to disable the 2 navigation commands if no git repo is found
+        self._git_repo_found = (
+            True  # Used to disable the 2 navigation commands if no git repo is found
         )
 
         # Caching
@@ -32,12 +32,12 @@ class SymbolNavigator:
 
     @property
     def git_utils(self):
-        if not self._no_git_repo_found:
+        if self._git_repo_found:
             if self._git_utils is None:
                 try:
                     self._git_utils = GitRepoUtils(self.root)
                 except Exception:
-                    self._no_git_repo_found = True
+                    self._git_repo_found = False
                     return None
             return self._git_utils
         return None
@@ -55,8 +55,8 @@ class SymbolNavigator:
         return self._ts_parser
 
     @property
-    def is_disabled(self):
-        return self._no_git_repo_found
+    def is_enabled(self):
+        return self._git_repo_found
 
     def get_parsed_tags(
         self,
