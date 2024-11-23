@@ -250,6 +250,123 @@ def test_undo_edit(editor):
     assert 'test file' in test_file.read_text()  # Original content restored
 
 
+def test_jump_to_definition(editor, monkeypatch):
+    editor, test_file = editor
+    
+    # Create a mock git repo with a Python file containing a symbol definition
+    test_py_file = test_file.parent / 'test_def.py'
+    test_py_file.write_text('class TestSymbol:\n    def test_method(self):\n        pass')
+    
+    # Mock GitRepoUtils to simulate a git repo
+    class MockGitUtils:
+        def get_all_absolute_tracked_files(self, depth=None):
+            return [str(test_py_file)]
+            
+        def get_absolute_tracked_files_in_directory(self, rel_dir_path=None, depth=None):
+            return [str(test_py_file)]
+    
+    monkeypatch.setattr('openhands_aci.editor.navigator.GitRepoUtils', lambda root: MockGitUtils())
+    
+    # Set the root path for SymbolNavigator to the test directory
+    from openhands_aci.editor.navigator import SymbolNavigator
+    editor._symbol_navigator = SymbolNavigator(root=str(test_file.parent))
+    
+    # Test basic symbol definition lookup
+    result = editor(command='jump_to_definition', path=None, symbol_name='TestSymbol')
+    assert isinstance(result, CLIResult)
+    assert 'Definition(s) of `TestSymbol`' in result.output
+    assert 'test_def.py' in result.output
+    assert 'class TestSymbol' in result.output
+    
+    # Test with specific file path
+    result = editor(command='jump_to_definition', path=str(test_py_file), symbol_name='TestSymbol')
+    assert isinstance(result, CLIResult)
+    assert result.output == """
+Definition(s) of `TestSymbol`:
+test_def.py:
+  1│class TestSymbol:
+  2│    def test_method(self):
+  3│        pass
+"""
+    
+    # Test symbol not found (fuzzy search)
+    result = editor(command='jump_to_definition', path=None, symbol_name='NonExistentSymbol')
+    assert isinstance(result, CLIResult)
+    assert result.output == 'No definitions found for `NonExistentSymbol`. Maybe you meant one of these: TestSymbol, test_method?'
+    
+    # Test missing symbol_name parameter
+    with pytest.raises(EditorToolParameterMissingError) as exc_info:
+        editor(command='jump_to_definition', path=None)
+    assert 'symbol_name' in str(exc_info.value)
+
+
+def test_find_references(editor, monkeypatch):
+    editor, test_file = editor
+    
+    # Create a mock git repo with Python files containing symbol references
+    test_def_file = test_file.parent / 'test_def.py'
+    test_def_file.write_text('class TestSymbol:\n    def test_method(self):\n        pass')
+    
+    test_ref_file = test_file.parent / 'test_ref.py'
+    test_ref_file.write_text('from test_def import TestSymbol\n\nobj = TestSymbol()\nobj.test_method()')
+    
+    # Mock GitRepoUtils to simulate a git repo
+    class MockGitUtils:
+        def get_all_absolute_tracked_files(self, depth=None):
+            return [str(test_def_file), str(test_ref_file)]
+            
+        def get_absolute_tracked_files_in_directory(self, rel_dir_path=None, depth=None):
+            return [str(test_def_file), str(test_ref_file)]
+    
+    monkeypatch.setattr('openhands_aci.editor.navigator.GitRepoUtils', lambda root: MockGitUtils())
+    
+    # Set the root path for SymbolNavigator to the test directory
+    from openhands_aci.editor.navigator import SymbolNavigator
+    editor._symbol_navigator = SymbolNavigator(root=str(test_file.parent))
+    
+    # Test basic reference lookup
+    result = editor(command='find_references', symbol_name='TestSymbol')
+    assert isinstance(result, CLIResult)
+    assert result.output == """
+References to `TestSymbol`:
+test_ref.py:
+...⋮...
+  3│obj = TestSymbol()
+...⋮...
+"""
+    
+    # Test symbol not found (fuzzy search)
+    result = editor(command='find_references', symbol_name='NonExistentSymbol')
+    assert isinstance(result, CLIResult)
+    assert result.output == 'No references found for `NonExistentSymbol`. Maybe you meant one of these: TestSymbol, test_method?'
+    
+    # Test missing symbol_name parameter
+    with pytest.raises(EditorToolParameterMissingError) as exc_info:
+        editor(command='find_references')
+    assert 'symbol_name' in str(exc_info.value)
+
+
+def test_navigation_no_git_repo(editor, monkeypatch):
+    editor, test_file = editor
+    
+    # Mock GitRepoUtils to simulate no git repo found
+    def mock_git_utils(root):
+        raise Exception("No git repository found")
+    
+    monkeypatch.setattr('openhands_aci.editor.navigator.GitRepoUtils', mock_git_utils)
+    
+    # Test jump_to_definition with no git repo
+    result = editor(command='jump_to_definition', path=None, symbol_name='TestSymbol')
+    assert isinstance(result, CLIResult)
+    assert 'No git repository found' in result.output
+    assert 'Navigation commands are disabled' in result.output
+    
+    # Test find_references with no git repo
+    result = editor(command='find_references', symbol_name='TestSymbol')
+    assert isinstance(result, CLIResult)
+    assert result.output == 'No git repository found. Navigation commands are disabled. Please use bash commands instead.'
+
+
 def test_validate_path_invalid(editor):
     editor, test_file = editor
     invalid_file = test_file.parent / 'nonexistent.txt'
