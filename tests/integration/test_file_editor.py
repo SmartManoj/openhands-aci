@@ -99,7 +99,8 @@ def test_str_replace_multi_line_no_linting(editor):
         == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of {test_file}:
      1\tThis is a sample file.
      2\tThis file is for testing purposes.
-Review the changes and make sure they are as expected. Edit the file again if necessary."""
+Review the changes and make sure they are as expected. Edit the file again if necessary.
+{NAVIGATION_TIPS}"""
     )
 
 
@@ -118,7 +119,8 @@ def test_str_replace_multi_line_with_tabs_no_linting(editor_python_file_with_tab
         == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of {test_file}:
      1\tdef test():
      2\t{'\t'.expandtabs()}print("Hello, Universe!")
-Review the changes and make sure they are as expected. Edit the file again if necessary."""
+Review the changes and make sure they are as expected. Edit the file again if necessary.
+{NAVIGATION_TIPS}"""
     )
 
 
