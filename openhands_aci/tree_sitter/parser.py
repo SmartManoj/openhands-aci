@@ -25,8 +25,7 @@ class TagKind(Enum):
 
 
 class TreeSitterParser:
-    TAGS_CACHE_VERSION = 3
-    TAGS_CACHE_DIR = f'.cache.tags.v{TAGS_CACHE_VERSION}'
+    TAGS_CACHE_DIR = '.oh_aci.cache.tags'
 
     def __init__(self, cache_root_dir: str) -> None:
         self.load_tags_cache(cache_root_dir)
