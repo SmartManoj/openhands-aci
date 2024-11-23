@@ -54,6 +54,10 @@ class SymbolNavigator:
             self._ts_parser = TreeSitterParser(self.root)
         return self._ts_parser
 
+    @property
+    def is_disabled(self):
+        return self._no_git_repo_found
+
     def get_parsed_tags(
         self,
         depth: int | None = None,
