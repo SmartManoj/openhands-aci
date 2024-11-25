@@ -1,3 +1,4 @@
+import tempfile
 import warnings
 from collections import namedtuple
 from enum import Enum
@@ -31,7 +32,8 @@ class TreeSitterParser:
         self.load_tags_cache(cache_root_dir)
 
     def load_tags_cache(self, abs_root_dir: str) -> None:
-        cache_path = Path(abs_root_dir) / self.TAGS_CACHE_DIR
+        safe_path = str(Path(abs_root_dir).resolve()).replace('/', '_').lstrip('_')
+        cache_path = Path(tempfile.gettempdir()) / safe_path / self.TAGS_CACHE_DIR
         try:
             self.tags_cache = Cache(cache_path)
         except Exception:

@@ -44,6 +44,8 @@ class OHEditor:
     TOOL_NAME = 'oh_editor'
 
     def __init__(self, workspace='./'):
+        workspace = str(Path(workspace).resolve())
+
         self._file_history: dict[Path, list[str]] = defaultdict(list)
         self._linter = DefaultLinter()
         self._symbol_navigator = SymbolNavigator(root=workspace)
