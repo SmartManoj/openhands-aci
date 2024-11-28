@@ -54,6 +54,16 @@ def test_create_file(editor):
     assert 'File created successfully' in result.output
 
 
+def test_create_file_missing_file_text(editor):
+    editor, test_file = editor
+    new_file = test_file.parent / 'new_file.txt'
+    with pytest.raises(EditorToolParameterMissingError) as exc_info:
+        editor(command='create', path=str(new_file))
+    assert exc_info.value.command == 'create'
+    assert exc_info.value.parameter == 'file_text'
+    assert exc_info.value.message == 'Parameter `file_text` is required for command: create.'
+
+
 def test_str_replace_no_linting(editor):
     editor, test_file = editor
     result = editor(
